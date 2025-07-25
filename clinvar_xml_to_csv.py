@@ -16,7 +16,7 @@ def extract_variation_data(variation_elem):
         'HGVS_c': '',
         'HGVS_p': '',
         'dbSNP_ID': '',
-        'OriginCounts': '',
+        'NumberOfSubmissions': '',
         'Comment': '',
         'Citations': []
     }
@@ -55,9 +55,9 @@ def extract_variation_data(variation_elem):
     if classified_condition is not None:
         record['Condition'] = classified_condition.text or ''
 
-    
-    origins = variation_elem.findall('.//Origin')
-    record['OriginCounts'] = str(len(origins))
+    number_of_submissions = variation_elem.find('.//Classifications/GermlineClassification')
+    if number_of_submissions is not None:
+        record['NumberOfSubmissions'] = number_of_submissions.get('NumberOfSubmissions', '') or ''
     
     comments = variation_elem.findall('.//Attribute[@Type="Description"]')
     other_comments = variation_elem.findall('.//Comment', '')
@@ -76,7 +76,7 @@ def extract_variation_data(variation_elem):
 
     return record
 
-with gzip.open('clinvar_dataset.xml.gz', 'rb') as f_in, open('clinvar_dataset.csv', 'w', newline='', encoding='utf-8') as f_out:
+with gzip.open('clinvar_dataset.xml.gz', 'rb') as f_in, open('clinvar_csv_dataset.csv', 'w', newline='', encoding='utf-8') as f_out:
     all_fields = [
         'VariationID',
         'VariationName',
@@ -89,7 +89,7 @@ with gzip.open('clinvar_dataset.xml.gz', 'rb') as f_in, open('clinvar_dataset.cs
         'HGVS_c',
         'HGVS_p',
         'dbSNP_ID',
-        'OriginCounts',
+        'NumberOfSubmissions',
         'Comment',
         'Citations'
     ]
