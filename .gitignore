@@ -1,2 +1,3 @@
 clinvar_dataset.xml.gz
 *.csv
+.vscode/
