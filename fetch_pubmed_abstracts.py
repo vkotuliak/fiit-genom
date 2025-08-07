@@ -218,5 +218,5 @@ if __name__ == "__main__":
     # session = create_session()
     # df = pd.read_csv('pubmed_abstracts.csv')
     # empty_abstracts = df[df['Abstract'].isnull() | (df['Abstract'].str.strip() == '')]
-    # pmid_list = empty_abstracts['PMID'].astype(str).tolist()
+    # pmid_list = empty_abstracts['PMID'].head(20).astype(str).tolist()
     # load_abstracts(pmid_list, session)
