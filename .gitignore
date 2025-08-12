@@ -2,3 +2,5 @@ clinvar_dataset.xml.gz
 *.csv
 .vscode/
 pubmed_xmls/
+downloaded_papers/
+*.pdf
