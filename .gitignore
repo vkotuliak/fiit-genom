@@ -4,3 +4,4 @@ clinvar_dataset.xml.gz
 pubmed_xmls/
 downloaded_papers/
 *.pdf
+pdf_contents/
