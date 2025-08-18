@@ -3,6 +3,7 @@ clinvar_dataset.xml.gz
 .vscode/
 pubmed_xmls/
 downloaded_papers/
+papers_by_doi/
 *.pdf
 pdf_contents/
 __pycache__/

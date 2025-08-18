@@ -36,7 +36,6 @@ def analyze_text_with_llm(text):
 def main():
     variation_id = 569
     data = aggregate_data(variation_id)
-    # print(data)
     analysis_results = analyze_text_with_llm(data)
     print("Analysis Results:")
     print(analysis_results)
