@@ -1,11 +1,12 @@
 import pandas as pd
 import ast
 import nltk
-import string
 
 from nltk.corpus import stopwords, wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+
+from s04_extract_pdfs import extract_pdf_content
 
 # nltk.download('punkt')
 # nltk.download('punkt_tab')
@@ -33,19 +34,36 @@ def aggregate_data(variation_id: int) -> str:
 
     comment = clinvar_df_filtered["Comment"].values[0]
     comment = ast.literal_eval(comment)
-    outcome += str(comment[0]) if comment else ""
+    outcome += "COMMENT:" + "\n"
+    outcome += str(comment[0]) if comment else "" + "\n"
+
+    outcome += "\n" + "---" + "\n"
 
     abstracts_df = pd.read_csv("data/pubmed_abstracts.csv")
     pubmed_ids = clinvar_df_filtered["Citations"].values[0]
     pubmed_ids = ast.literal_eval(pubmed_ids)
 
+    counter = 0
     for pubmed_id in pubmed_ids:
-        abstract_info = abstracts_df.loc[
-            abstracts_df["PMID"] == int(pubmed_id), "Abstract"
+        outcome += f"PAPER {counter + 1}" + "\n"
+        counter += 1
+        row = abstracts_df.loc[
+            abstracts_df["PMID"] == int(pubmed_id), ["Abstract", "DOI"]
         ]
-        if not abstract_info.empty:
-            outcome += str(abstract_info.values[0])  # + '\n'
+        outcome += "ABSTRACT:" + "\n"
+        if not row["Abstract"].empty:
+            outcome += str(row["Abstract"].values[0])   + '\n'
 
+        
+        if not row["DOI"].empty:
+            doi = str(row["DOI"].values[0]).replace("https://doi.org/", "").replace("/", "%2F") + ".pdf"
+            doi = "papers_by_doi/" + doi
+            pdf_content = extract_pdf_content(doi)
+            outcome += "FULL PAPER TEXT:" + "\n"
+            outcome += pdf_content
+
+    with open(f"aggregated_data_{variation_id}.txt", "w", encoding="utf-8") as f:
+        f.write(outcome)
     return outcome
 
 
@@ -84,7 +102,7 @@ def remove_stopwords_and_lemmatize(text: str) -> str:
 
 
 def main():
-    variation_id = 569
+    variation_id = 286 
     aggregated_data = aggregate_data(variation_id)
     # cleaned_data = remove_stopwords_and_lemmatize(aggregated_data)
     print(f"Cleaned Data for Variation ID {variation_id}:\n{aggregated_data}")
