@@ -1,12 +1,21 @@
 import pandas as pd
 import ast
 import nltk
+from pathlib import Path
+import sys
 
 from nltk.corpus import stopwords, wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
 from s04_extract_pdfs import extract_pdf_content
+from unstructured.cleaners.core import group_broken_paragraphs
+
+project_root = str(Path(__file__).resolve().parents[1])
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from scripts.structure_data import clean_raw_text
 
 # nltk.download('punkt')
 # nltk.download('punkt_tab')
@@ -50,17 +59,28 @@ def aggregate_data(variation_id: int) -> str:
         row = abstracts_df.loc[
             abstracts_df["PMID"] == int(pubmed_id), ["Abstract", "DOI"]
         ]
-        outcome += "ABSTRACT:" + "\n"
-        if not row["Abstract"].empty:
-            outcome += str(row["Abstract"].values[0])   + '\n'
 
-        
         if not row["DOI"].empty:
-            doi = str(row["DOI"].values[0]).replace("https://doi.org/", "").replace("/", "%2F") + ".pdf"
+            doi = (
+                str(row["DOI"].values[0])
+                .replace("https://doi.org/", "")
+                .replace("/", "%2F")
+                + ".pdf"
+            )
             doi = "papers_by_doi/" + doi
             pdf_content = extract_pdf_content(doi)
-            outcome += "FULL PAPER TEXT:" + "\n"
-            outcome += pdf_content
+            pdf_content = group_broken_paragraphs(pdf_content)
+            pdf_content = clean_raw_text(pdf_content)
+            if pdf_content == "Not Provided \n" and not row["Abstract"].empty:
+                outcome += "ABSTRACT:" + "\n"
+                outcome += str(row["Abstract"].values[0]) + "\n"
+            else:
+                outcome += "FULL PAPER TEXT:" + "\n"
+                outcome += pdf_content + "\n"
+        else:
+            outcome += "ABSTRACT:" + "\n"
+            if not row["Abstract"].empty:
+                outcome += str(row["Abstract"].values[0]) + "\n"
 
     with open(f"aggregated_data_{variation_id}.txt", "w", encoding="utf-8") as f:
         f.write(outcome)
@@ -102,7 +122,7 @@ def remove_stopwords_and_lemmatize(text: str) -> str:
 
 
 def main():
-    variation_id = 286 
+    variation_id = 3254
     aggregated_data = aggregate_data(variation_id)
     # cleaned_data = remove_stopwords_and_lemmatize(aggregated_data)
     print(f"Cleaned Data for Variation ID {variation_id}:\n{aggregated_data}")

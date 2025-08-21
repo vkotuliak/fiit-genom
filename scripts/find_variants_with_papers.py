@@ -27,7 +27,7 @@ def find_downloaded_papers() -> list:
     """
     Identifies PubMed IDs from ClinVar for which a corresponding PDF has been downloaded.
     """
-    clinvar_df = pd.read_csv("data/clinvar_csv_dataset.csv", nrows=20)
+    clinvar_df = pd.read_csv("data/clinvar_csv_dataset.csv", nrows=1000)
     pubmed_df = pd.read_csv("data/pubmed_abstracts.csv")
 
     pmids_w_downloaded = []
@@ -38,7 +38,13 @@ def find_downloaded_papers() -> list:
             print(f"processing {counter}/10000")
         counter += 1
 
-        all_downloaded = False
+        all_downloaded = True
+        check_further = True
+        # if downloaded_no + not_in_csv_no == total_no then all the present articles which have pubmed id were downloaded
+        total_no = len(ast.literal_eval(pmed_ids))
+        downloaded_no = 0
+        not_in_csv_no = 0
+
         for p_id in ast.literal_eval(pmed_ids):
             match = pubmed_df[
                 (pubmed_df["PMID"] == int(p_id))
@@ -48,10 +54,15 @@ def find_downloaded_papers() -> list:
             if not match.empty:
                 doi = match.iloc[0]["DOI"]
                 if check_if_paper_exists(doi, "papers_by_doi"):
-                    print(f"This paper is already downloaded: {doi}")
-                    all_downloaded = True
+                    downloaded_no += 1
+            
+            elif match.empty:
+                not_in_csv_no += 1
         
-        if all_downloaded == True:
+        # if downloaded_no + not_in_csv_no == total_no and downloaded_no > 0:
+        #     pmids_w_downloaded.append(var_id)
+
+        if downloaded_no == total_no and total_no >= 2:
             pmids_w_downloaded.append(var_id)
 
     return pmids_w_downloaded
