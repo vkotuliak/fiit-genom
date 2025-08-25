@@ -44,7 +44,7 @@ def aggregate_data(variation_id: int) -> str:
     comment = clinvar_df_filtered["Comment"].values[0]
     comment = ast.literal_eval(comment)
     outcome += "COMMENT:" + "\n"
-    outcome += str(comment[0]) if comment else "" + "\n"
+    outcome += ". ".join(comment) if comment else "Not Provided" + "\n"
 
     outcome += "\n" + "---" + "\n"
 
@@ -54,6 +54,7 @@ def aggregate_data(variation_id: int) -> str:
 
     counter = 0
     for pubmed_id in pubmed_ids:
+        outcome += "#####" + "\n"
         outcome += f"PAPER {counter + 1}" + "\n"
         counter += 1
         row = abstracts_df.loc[
@@ -69,13 +70,13 @@ def aggregate_data(variation_id: int) -> str:
             )
             doi = "papers_by_doi/" + doi
             pdf_content = extract_pdf_content(doi)
-            pdf_content = group_broken_paragraphs(pdf_content)
-            pdf_content = clean_raw_text(pdf_content)
             if pdf_content == "Not Provided \n" and not row["Abstract"].empty:
                 outcome += "ABSTRACT:" + "\n"
                 outcome += str(row["Abstract"].values[0]) + "\n"
             else:
                 outcome += "FULL PAPER TEXT:" + "\n"
+                pdf_content = group_broken_paragraphs(pdf_content)
+                pdf_content = clean_raw_text(pdf_content)
                 outcome += pdf_content + "\n"
         else:
             outcome += "ABSTRACT:" + "\n"
@@ -122,7 +123,7 @@ def remove_stopwords_and_lemmatize(text: str) -> str:
 
 
 def main():
-    variation_id = 3254
+    variation_id = 306
     aggregated_data = aggregate_data(variation_id)
     # cleaned_data = remove_stopwords_and_lemmatize(aggregated_data)
     print(f"Cleaned Data for Variation ID {variation_id}:\n{aggregated_data}")

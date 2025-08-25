@@ -8,9 +8,10 @@ from s05_data_preparation import aggregate_data
 
 
 def analyze_text_with_llm(text):
+    # model_id = "Qwen/Qwen3-4B"
+    model_id = "Qwen/Qwen2.5-7B"
     # model_id = "openai/gpt-oss-20b"
-    model_id = "meta-llama/Llama-3.3-70B-Instruct" # Too big, requires more resources
-    # model_id = "Qwen/Qwen2.5-7B"
+    # model_id = "meta-llama/Llama-3.3-70B-Instruct" # Too big, requires more resources
     # model_id = "Qwen/Qwen2.5-72B-Instruct"
 
     quantization_config = BitsAndBytesConfig(
@@ -26,21 +27,50 @@ def analyze_text_with_llm(text):
     )
 
     # 1. Split the text into manageable chunks
-    chunk_size = 50000
-    text_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    # chunk_size = 500000
+    # text_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+    text_chunks = text.split("#####")
+    text_chunks = [chunk.strip() for chunk in text_chunks if chunk.strip()]
+    # Count characters per chunk
+    for i, chunk in enumerate(text_chunks):
+        char_count = len(chunk)
+        print(f"Chunk {i+1}: {char_count} characters")
     
     # 2. Map Step: Process all chunks in a single batch for efficiency
     print(f"Processing {len(text_chunks)} chunks in a batch...")
     
     summary_prompts = [f"""
     ### Instruction:
-    You are a research assistant. Read the following text excerpt from a collection of academic papers and summarize the key findings or main points.
+    Read the text bellow. State only the number of participants in the scientific paper and nothing more. If it is paper without participants list NA.
 
     ### Input Text:
     {chunk}
 
     ### Response:
     """ for chunk in text_chunks]
+    # summary_prompts = [f"""
+    # Objective: Analyze the following text chunk and extract all information related to the sample size (number of patients) of studies that investigate the link between pathogenic DNA variants and diseases, especially cancer.
+
+    # Instructions:
+    # From the text provided below, please identify and list the following details:
+
+    # Specific Numbers: Any mention of the number of patients, participants, subjects, cases, or controls in a study.
+
+    # Context of the Study: The study must be about a demonstrated link between a DNA variant (or mutation) and a disease. Note if the disease is specified as oncological/cancer.
+
+    # Qualitative Descriptions: Extract any descriptive terms for sample size, such as "small cohorts," "large-scale studies," "family studies," or "population-based studies."
+
+    # Averages or Ranges: If the text mentions an average sample size, or a typical range of patient numbers for such studies, extract that information.
+
+    # Output Format:
+    # Present the extracted information as a concise list. If no relevant information is found in this chunk, please state: "No relevant information found in this chunk."
+
+    # Input text:
+    # {chunk}
+
+    # ### Response:
+    # """ for chunk in text_chunks]
 
     responses = pipeline(summary_prompts, max_new_tokens=256, num_return_sequences=1)
 
@@ -48,6 +78,7 @@ def analyze_text_with_llm(text):
     for i, response in enumerate(responses):
         prompt = summary_prompts[i]
         summary = response[0]["generated_text"][len(prompt):].strip()
+        print(f"Summary for chunk {i+1}: {summary}")
         summaries.append(summary)
 
     # 3. Reduce Step: Synthesize the summaries
@@ -56,12 +87,15 @@ def analyze_text_with_llm(text):
 
     final_prompt = f"""
     ### Instruction:
-    You are a research assistant. Read the text provided below, which contains summaries from several academic papers. Your task is to synthesize the content and identify the three most significant, overarching themes. List these themes concisely.
+    Read the text provided below. List only the number of participants in each paper. If it isn't study with participants list NA.
 
     ### Input Text:
     {combined_summaries}
 
     ### Response:
+    Paper 1:
+    Paper 2:
+    ...
     """
 
     response = pipeline(final_prompt, max_new_tokens=512, num_return_sequences=1)
